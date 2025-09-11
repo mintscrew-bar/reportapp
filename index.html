@@ -13,142 +13,128 @@
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   </head>
   <body>
     <div class="document-container">
-      <!-- 상단 버튼 영역 -->
-      <div class="toolbar">
+      <nav class="toolbar">
         <button id="saveBtn" class="btn btn-primary">💾 저장</button>
-        <button id="loadBtn" class="btn btn-secondary">📂 불러오기</button>
         <button id="clearBtn" class="btn btn-warning">🗑️ 초기화</button>
         <button id="exportExcelBtn" class="btn btn-success">
           📊 Excel 내보내기
         </button>
         <button id="exportPdfBtn" class="btn btn-info">📄 PDF 내보내기</button>
-      </div>
+      </nav>
 
-      <!-- 문서 영역 -->
-      <div class="document">
-        <!-- 문서 헤더 -->
-        <div class="document-header">
-          <h1>일일업무보고서</h1>
-          <div class="header-info">
-            <div class="info-row">
-              <span class="label">보고서 날짜:</span>
-              <input type="date" id="reportDate" class="date-input" />
+      <div class="main-layout">
+        <main class="document">
+          <header class="document-header">
+            <h1>일일업무보고서</h1>
+            <div class="header-info">
+              <div class="info-row">
+                <label for="reportDate" class="label">보고서 날짜:</label>
+                <input type="date" id="reportDate" class="date-input" />
+              </div>
+              <div class="info-row">
+                <label for="reporter" class="label">작성자:</label>
+                <input
+                  type="text"
+                  id="reporter"
+                  class="text-input"
+                  placeholder="작성자명을 입력하세요"
+                />
+              </div>
             </div>
-            <div class="info-row">
-              <span class="label">작성자:</span>
-              <input
-                type="text"
-                id="reporter"
-                class="text-input"
-                placeholder="작성자명을 입력하세요"
-              />
+          </header>
+
+          <section class="section">
+            <h2>1. 일일 업무</h2>
+            <div class="table-container">
+              <table id="dailyWorkTable" class="work-table">
+                <thead>
+                  <tr>
+                    <th class="time-col">시간</th>
+                    <th class="work-col">업무내용</th>
+                    <th class="note-col">비고</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyWorkTableBody"></tbody>
+              </table>
+              <div class="table-controls">
+                <button id="addDailyRow" class="add-row-btn">+ 행 추가</button>
+                <button id="removeDailyRow" class="remove-row-btn">
+                  - 행 제거
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- 일일 업무 테이블 -->
-        <div class="section">
-          <h2>1. 일일 업무</h2>
-          <div class="table-container">
-            <table id="dailyWorkTable" class="work-table">
-              <thead>
-                <tr>
-                  <th class="time-col">시간</th>
-                  <th class="work-col">업무내용</th>
-                  <th class="note-col">비고</th>
-                </tr>
-              </thead>
-              <tbody id="dailyWorkTableBody">
-                <!-- 동적으로 추가될 행들 -->
-              </tbody>
-            </table>
-            <div class="table-controls">
-              <button id="addDailyRow" class="add-row-btn">+ 행 추가</button>
-              <button id="removeDailyRow" class="remove-row-btn">
-                - 행 제거
-              </button>
+          <section class="section">
+            <h2>2. 지시 및 이행사항</h2>
+            <textarea
+              id="instructions"
+              class="text-area"
+              placeholder="지시받은 사항과 이행 내용을 작성해주세요"
+              rows="4"
+            ></textarea>
+          </section>
+
+          <section class="section">
+            <h2>3. 기타 보고사항</h2>
+            <textarea
+              id="otherReports"
+              class="text-area"
+              placeholder="기타 보고할 사항을 작성해주세요"
+              rows="4"
+            ></textarea>
+          </section>
+
+          <section class="section">
+            <h2>4. 주간 주요 업무 계획</h2>
+            <div class="table-container">
+              <table id="weeklyPlanTable" class="plan-table">
+                <thead>
+                  <tr>
+                    <th class="plan-col">주간 업무 계획</th>
+                  </tr>
+                </thead>
+                <tbody id="weeklyPlanTableBody"></tbody>
+              </table>
+              <div class="table-controls">
+                <button id="addWeeklyRow" class="add-row-btn">+ 행 추가</button>
+                <button id="removeWeeklyRow" class="remove-row-btn">
+                  - 행 제거
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- 지시 및 이행사항 -->
-        <div class="section">
-          <h2>2. 지시 및 이행사항</h2>
-          <textarea
-            id="instructions"
-            class="text-area"
-            placeholder="지시받은 사항과 이행 내용을 작성해주세요"
-            rows="4"
-          ></textarea>
-        </div>
-
-        <!-- 기타 보고사항 -->
-        <div class="section">
-          <h2>3. 기타 보고사항</h2>
-          <textarea
-            id="otherReports"
-            class="text-area"
-            placeholder="기타 보고할 사항을 작성해주세요"
-            rows="4"
-          ></textarea>
-        </div>
-
-        <!-- 주간 주요 업무 계획 -->
-        <div class="section">
-          <h2>4. 주간 주요 업무 계획</h2>
-          <div class="table-container">
-            <table id="weeklyPlanTable" class="plan-table">
-              <thead>
-                <tr>
-                  <th class="plan-col">주간 업무 계획</th>
-                </tr>
-              </thead>
-              <tbody id="weeklyPlanTableBody">
-                <!-- 동적으로 추가될 행들 -->
-              </tbody>
-            </table>
-            <div class="table-controls">
-              <button id="addWeeklyRow" class="add-row-btn">+ 행 추가</button>
-              <button id="removeWeeklyRow" class="remove-row-btn">
-                - 행 제거
-              </button>
+          <section class="section">
+            <h2>5. 월간 주요 업무 계획</h2>
+            <div class="table-container">
+              <table id="monthlyPlanTable" class="plan-table">
+                <thead>
+                  <tr>
+                    <th class="plan-col">월간 업무 계획</th>
+                  </tr>
+                </thead>
+                <tbody id="monthlyPlanTableBody"></tbody>
+              </table>
+              <div class="table-controls">
+                <button id="addMonthlyRow" class="add-row-btn">+ 행 추가</button>
+                <button id="removeMonthlyRow" class="remove-row-btn">
+                  - 행 제거
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
+          </section>
+        </main>
 
-        <!-- 월간 주요 업무 계획 -->
-        <div class="section">
-          <h2>5. 월간 주요 업무 계획</h2>
-          <div class="table-container">
-            <table id="monthlyPlanTable" class="plan-table">
-              <thead>
-                <tr>
-                  <th class="plan-col">월간 업무 계획</th>
-                </tr>
-              </thead>
-              <tbody id="monthlyPlanTableBody">
-                <!-- 동적으로 추가될 행들 -->
-              </tbody>
-            </table>
-            <div class="table-controls">
-              <button id="addMonthlyRow" class="add-row-btn">+ 행 추가</button>
-              <button id="removeMonthlyRow" class="remove-row-btn">
-                - 행 제거
-              </button>
+        <aside class="saved-reports">
+          <h3>📂 저장된 보고서 목록</h3>
+          <div id="reportList" class="report-list">
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 저장된 보고서 목록 -->
-      <div class="saved-reports">
-        <h3>저장된 보고서 목록</h3>
-        <div id="reportList" class="report-list">
-          <!-- 저장된 보고서 목록이 여기에 표시됩니다 -->
-        </div>
+        </aside>
       </div>
     </div>
 
