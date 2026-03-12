@@ -4,12 +4,6 @@ const { jsPDF } = window.jspdf;
 class DailyReportApp {
   constructor() {
     // 설정 및 상수
-    this.config = {
-      storageKey: "dailyReports",
-      tempStorageKey: "tempDailyReport",
-      autoSaveInterval: 10000,
-    };
-
     this.messages = {
       saveSuccess: "보고서가 성공적으로 저장되었습니다.",
       saveError: "날짜와 작성자는 필수 항목입니다.",
@@ -26,23 +20,22 @@ class DailyReportApp {
     };
 
     // 상태
-    this.reports = this.loadReportsFromStorage();
+    this.reports = {}; // 초기에는 비어있는 상태로 시작
     this.currentReportId = null;
-    this.autoSaveTimer = null;
 
+    // 앱 초기화 실행
     this.initializeApp();
   }
 
   // =================================
-  // 초기화
+  // 초기화 (비동기 처리)
   // =================================
-  initializeApp() {
+  async initializeApp() {
+    this.reports = await this.loadReportsFromStorage(); // 파일에서 데이터 로드
     this.setInitialDate();
     this.attachEventListeners();
     this.initializeTables();
-    this.displayReportList();
-    this.loadTemporaryReport();
-    this.startAutoSave();
+    this.displayReportList(); // 데이터 로드 후 목록 표시
   }
   
   setInitialDate() {
@@ -71,13 +64,22 @@ class DailyReportApp {
     document.getElementById("removeWeeklyRow").addEventListener("click", () => this.removeWeeklyPlanRow());
     document.getElementById("addMonthlyRow").addEventListener("click", () => this.addMonthlyPlanRow());
     document.getElementById("removeMonthlyRow").addEventListener("click", () => this.removeMonthlyPlanRow());
-
-    document.querySelector(".document").addEventListener("input", () => this.handleAutoSave());
   }
 
   // =================================
-  // 데이터 관리 (Get/Set/Save/Load)
+  // 데이터 관리 (Electron API 연동)
   // =================================
+  async loadReportsFromStorage() {
+    // Electron의 main 프로세스에 데이터 요청
+    const data = await window.electronAPI.loadData();
+    return data ? JSON.parse(data) : {};
+  }
+
+  saveReportsToStorage() {
+    // Electron의 main 프로세스에 데이터 저장 요청
+    window.electronAPI.saveData(this.reports);
+  }
+
   getFormData() {
     const dailyWorkData = Array.from(document.querySelectorAll("#dailyWorkTableBody tr")).map(row => {
         const inputs = row.querySelectorAll("input");
@@ -139,12 +141,11 @@ class DailyReportApp {
     formData.id = reportId;
 
     this.reports[reportId] = formData;
-    this.saveReportsToStorage();
+    this.saveReportsToStorage(); // 파일에 저장
     this.currentReportId = reportId;
 
     this.showNotification(this.messages.saveSuccess, "success");
     this.displayReportList();
-    this.clearTemporaryReport();
   }
 
   loadReport(reportId) {
@@ -159,7 +160,7 @@ class DailyReportApp {
   deleteReport(reportId) {
     this.showConfirm(this.messages.deleteConfirm, () => {
       delete this.reports[reportId];
-      this.saveReportsToStorage();
+      this.saveReportsToStorage(); // 파일에 변경사항 저장
       this.displayReportList();
       if(this.currentReportId === reportId) {
         this._clearFormContents();
@@ -186,6 +187,10 @@ class DailyReportApp {
     document.getElementById("monthlyPlanTableBody").innerHTML = '';
     this.initializeTables();
     this.currentReportId = null;
+  }
+  
+  generateId() { 
+    return Date.now().toString(36) + Math.random().toString(36).substr(2); 
   }
 
   // =================================
@@ -265,31 +270,15 @@ class DailyReportApp {
   }
 
   showConfirm(message, onConfirm) {
-    const existingModal = document.querySelector(".modal-overlay");
-    if (existingModal) existingModal.remove();
-    const modal = document.createElement("div");
-    modal.className = "modal-overlay";
-    modal.innerHTML = `
-      <div class="modal-content">
-        <p>${message}</p>
-        <div class="modal-actions">
-          <button id="confirmBtn" class="btn btn-primary">확인</button>
-          <button id="cancelBtn" class="btn btn-secondary">취소</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    const closeModal = () => {
-      modal.classList.remove("active");
-      setTimeout(() => modal.remove(), 300);
-    };
-    modal.querySelector("#confirmBtn").onclick = () => { onConfirm(); closeModal(); };
-    modal.querySelector("#cancelBtn").onclick = closeModal;
-    modal.onclick = (e) => { if (e.target === modal) closeModal(); };
-    setTimeout(() => modal.classList.add("active"), 10);
+    // confirm()은 Electron에서도 잘 동작하므로 그대로 사용하거나,
+    // 기존에 만들었던 커스텀 모달 UI를 그대로 사용해도 됩니다.
+    if (confirm(message)) {
+      onConfirm();
+    }
   }
 
   // =================================
-  // 내보내기 기능
+  // 내보내기 기능 (기존과 동일)
   // =================================
   exportToExcel() {
     const formData = this.getFormData();
@@ -317,13 +306,6 @@ class DailyReportApp {
     this.showNotification(this.messages.exportExcelSuccess, "success");
   }
 
- // =================================
-  // 내보내기 기능
-  // =================================
-  exportToExcel() {
-    // ... (기존과 동일)
-  }
-
   async exportToPDF() {
     const formData = this.getFormData();
     if (!formData.date || !formData.reporter) {
@@ -336,10 +318,8 @@ class DailyReportApp {
     const container = document.body;
     const tempElements = [];
 
-    // PDF 변환 준비
     container.classList.add("pdf-export-mode");
 
-    // 1. Textarea를 div로 교체
     const textareas = reportElement.querySelectorAll('textarea');
     textareas.forEach(textarea => {
       const div = document.createElement('div');
@@ -350,11 +330,10 @@ class DailyReportApp {
       tempElements.push({ original: textarea, temp: div });
     });
 
-    // ✨ 최종 수정: Input을 잘리지 않는 div로 교체
     const inputsToReplace = reportElement.querySelectorAll('.date-input, .text-input');
     inputsToReplace.forEach(input => {
       const div = document.createElement('div');
-      div.className = 'temp-pdf-input-div'; // 새로운 클래스 적용
+      div.className = 'temp-pdf-input-div';
       div.innerText = input.value || '';
       input.style.display = 'none';
       input.parentNode.insertBefore(div, input);
@@ -393,7 +372,6 @@ class DailyReportApp {
       console.error("PDF 생성 오류:", err);
       this.showNotification("PDF 생성 중 오류가 발생했습니다.", "error");
     } finally {
-      // PDF 생성 후 모든 임시 요소를 원래 요소로 복구
       container.classList.remove("pdf-export-mode");
       tempElements.forEach(({ original, temp }) => {
         original.style.display = '';
@@ -402,42 +380,6 @@ class DailyReportApp {
         }
       });
     }
-  }
-  
-  // =================================
-  // 유틸리티 및 스토리지
-  // =================================
-  generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
-  loadReportsFromStorage() { return JSON.parse(localStorage.getItem(this.config.storageKey)) || {}; }
-  saveReportsToStorage() { localStorage.setItem(this.config.storageKey, JSON.stringify(this.reports)); }
-  
-  // =================================
-  // 자동 저장
-  // =================================
-  startAutoSave() {
-    this.autoSaveTimer = setInterval(() => this.saveTemporaryReport(), this.config.autoSaveInterval);
-  }
-
-  handleAutoSave() { this.saveTemporaryReport(); }
-
-  saveTemporaryReport() {
-    const formData = this.getFormData();
-    if (formData.reporter || formData.dailyWork.some(item => item.work)) {
-        localStorage.setItem(this.config.tempStorageKey, JSON.stringify(formData));
-    }
-  }
-
-  loadTemporaryReport() {
-    const tempData = localStorage.getItem(this.config.tempStorageKey);
-    if (tempData) {
-        if (confirm("이전에 작성하던 내용이 있습니다. 불러오시겠습니까?")) {
-            this.setFormData(JSON.parse(tempData));
-        }
-    }
-  }
-
-  clearTemporaryReport() {
-      localStorage.removeItem(this.config.tempStorageKey);
   }
 }
 

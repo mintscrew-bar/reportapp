@@ -19,16 +19,41 @@
   <body>
     <div class="document-container">
       <nav class="toolbar">
-        <button id="saveBtn" class="btn btn-primary">💾 저장</button>
-        <button id="clearBtn" class="btn btn-warning">🗑️ 초기화</button>
-        <button id="exportExcelBtn" class="btn btn-success">
+        <!-- 일일업무 보고서 버튼 -->
+        <button id="saveBtn" class="btn btn-primary daily-report-btn">💾 저장</button>
+        <button id="clearBtn" class="btn btn-warning daily-report-btn">🗑️ 초기화</button>
+        <button id="exportExcelBtn" class="btn btn-success daily-report-btn">
           📊 Excel 내보내기
         </button>
-        <button id="exportPdfBtn" class="btn btn-info">📄 PDF 내보내기</button>
+        <button id="exportPdfBtn" class="btn btn-info daily-report-btn">📄 PDF 내보내기</button>
+
+        <!-- 영수증 버튼 -->
+        <button id="saveReceiptBtn" class="btn btn-primary receipt-btn" style="display: none;">💾 저장</button>
+        <button id="clearReceiptBtn" class="btn btn-warning receipt-btn" style="display: none;">🗑️ 초기화</button>
+        <button id="exportReceiptExcelBtn" class="btn btn-success receipt-btn" style="display: none;">
+          📊 Excel 내보내기
+        </button>
+        <button id="exportReceiptPdfBtn" class="btn btn-info receipt-btn" style="display: none;">📄 PDF 내보내기</button>
       </nav>
 
       <div class="main-layout">
-        <main class="document">
+        <!-- 왼쪽 탭 네비게이션 -->
+        <aside class="tab-navigation">
+          <button class="tab-btn active" data-tab="daily-report">
+            <span class="tab-icon">📝</span>
+            <span class="tab-label">일일업무</span>
+          </button>
+          <button class="tab-btn" data-tab="receipt">
+            <span class="tab-icon">🧾</span>
+            <span class="tab-label">영수증</span>
+          </button>
+        </aside>
+
+        <!-- 메인 컨텐츠 영역 -->
+        <main class="content-area">
+          <!-- 일일업무보고서 탭 -->
+          <div id="daily-report-tab" class="tab-content active">
+            <div class="document">
           <header class="document-header">
             <h1>일일업무보고서</h1>
             <div class="header-info">
@@ -129,12 +154,76 @@
               </div>
             </div>
           </section>
+            </div>
+          </div>
+
+          <!-- 영수증 탭 -->
+          <div id="receipt-tab" class="tab-content">
+            <div class="document">
+              <header class="document-header">
+                <h1>월간 영수증 정리</h1>
+                <div class="header-info">
+                  <div class="info-row">
+                    <label for="receiptDate" class="label">제출 날짜:</label>
+                    <input type="date" id="receiptDate" class="date-input" />
+                  </div>
+                  <div class="info-row">
+                    <label for="receiptAmount" class="label">총 금액:</label>
+                    <input type="number" id="receiptAmount" class="text-input" placeholder="0" style="width: 150px;" />
+                    <span style="margin-left: 5px;">원</span>
+                  </div>
+                </div>
+              </header>
+
+              <section class="section">
+                <h2>영수증 정보</h2>
+                <section class="section">
+                  <div class="table-container">
+                    <table id="bill_log_table" class="bill-log-table">
+                      <thead>
+                        <tr>
+                          <th class="date-col">날짜</th>
+                          <th class="item-col">품목</th>
+                          <th class="quantity-col">수량</th>
+                          <th class="price-col">금액</th>
+                          <th class="note-col">비고</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bill_log_tableBody"></tbody>
+                    </table>
+                    <div class="table-controls">
+                      <button id="addBillLogRow" class="add-row-btn">+ 행 추가</button>
+                      <button id="removeBillLogRow" class="remove-row-btn">
+                        - 행 제거
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </section>
+
+              <section class="section">
+                <h2>월간 통계</h2>
+                <div id="monthlyStats" class="stats-container">
+                  <!-- 통계가 여기 렌더링됩니다 -->
+                </div>
+              </section>
+            </div>
+          </div>
         </main>
 
-        <aside class="saved-reports">
-          <h3>📂 저장된 보고서 목록</h3>
-          <div id="reportList" class="report-list">
-            </div>
+        <!-- 오른쪽 사이드바 -->
+        <aside class="sidebar-right">
+          <!-- 일일업무 보고서 사이드바 -->
+          <div id="daily-report-sidebar" class="sidebar-content active">
+            <h3>📂 저장된 보고서 목록</h3>
+            <div id="reportList" class="report-list"></div>
+          </div>
+
+          <!-- 영수증 사이드바 -->
+          <div id="receipt-sidebar" class="sidebar-content">
+            <h3>🧾 저장된 영수증 목록</h3>
+            <div id="receiptList" class="report-list"></div>
+          </div>
         </aside>
       </div>
     </div>

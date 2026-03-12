@@ -36,7 +36,7 @@
   }
   
   .document-container {
-    max-width: 1200px; /* 전체 컨테이너 너비 확장 */
+    max-width: 1400px; /* 전체 컨테이너 너비 확장 (탭 네비게이션 추가로 인한 확장) */
     margin: 0 auto;
     padding: 20px;
   }
