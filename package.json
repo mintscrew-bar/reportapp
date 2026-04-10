@@ -1,12 +1,46 @@
 {
-  "name": "일일업무보고서",
+  "name": "daily-report-app",
   "version": "1.0.0",
   "description": "간편하고 효율적인 일일업무보고서 작성 및 관리 애플리케이션입니다.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . 일일업무보고서 --platform=win32 --arch=x64 --out=dist --overwrite",
+    "build": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win --x64",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "build": {
+    "appId": "com.reportapp.daily",
+    "productName": "일일업무보고서",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!node_modules/electron/**",
+      "!node_modules/electron-builder/**",
+      "!node_modules/electron-packager/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icons/win/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "icons/win/icon.ico",
+      "uninstallerIcon": "icons/win/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "일일업무보고서"
+    }
   },
   "repository": {
     "type": "git",
@@ -15,12 +49,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/mintscrew-bar/reportapp/issues"
-  },
-  "homepage": "https://github.com/mintscrew-bar/reportapp#readme",
   "devDependencies": {
     "electron": "^38.1.0",
-    "electron-packager": "^17.1.2"
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2",
+    "png-to-ico": "^3.0.1"
   }
 }
