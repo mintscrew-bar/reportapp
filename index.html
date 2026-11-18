@@ -3,18 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+    />
     <title>일일업무보고서</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="manifest" href="manifest.json" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="node_modules/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="node_modules/jspdf/dist/jspdf.umd.min.js"></script>
+    <script src="node_modules/html2canvas/dist/html2canvas.min.js"></script>
   </head>
   <body>
     <div class="document-container">
@@ -34,6 +32,11 @@
           📊 Excel 내보내기
         </button>
         <button id="exportReceiptPdfBtn" class="btn btn-info receipt-btn" style="display: none;">📄 PDF 내보내기</button>
+
+        <button id="backupBtn" class="btn btn-secondary">📦 전체 백업</button>
+        <button id="restoreBtn" class="btn btn-secondary">♻️ 백업 복원</button>
+        <span id="autosaveStatus" class="autosave-status" aria-live="polite"></span>
+        <span id="appVersion" class="app-version"></span>
       </nav>
 
       <div class="main-layout">
@@ -96,7 +99,35 @@
           </section>
 
           <section class="section">
-            <h2>2. 지시 및 이행사항</h2>
+            <h2>2. 금일 지출 내역</h2>
+            <div class="table-container">
+              <table id="dailyExpenseTable" class="expense-table">
+                <thead>
+                  <tr>
+                    <th class="expense-category-col">항목</th>
+                    <th class="expense-description-col">사용처 / 내용</th>
+                    <th class="expense-amount-col">금액</th>
+                    <th class="expense-note-col">비고</th>
+                  </tr>
+                </thead>
+                <tbody id="dailyExpenseTableBody"></tbody>
+                <tfoot>
+                  <tr>
+                    <th colspan="2">합계</th>
+                    <td id="dailyExpenseTotal" class="expense-total">0원</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div class="table-controls">
+                <button id="addExpenseRow" class="add-row-btn">+ 행 추가</button>
+                <button id="removeExpenseRow" class="remove-row-btn">- 행 제거</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <h2>3. 지시 및 이행사항</h2>
             <textarea
               id="instructions"
               class="text-area"
@@ -106,7 +137,7 @@
           </section>
 
           <section class="section">
-            <h2>3. 기타 보고사항</h2>
+            <h2>4. 기타 보고사항</h2>
             <textarea
               id="otherReports"
               class="text-area"
@@ -116,7 +147,7 @@
           </section>
 
           <section class="section">
-            <h2>4. 주간 주요 업무 계획</h2>
+            <h2>5. 주간 주요 업무 계획</h2>
             <div class="table-container">
               <table id="weeklyPlanTable" class="plan-table">
                 <thead>
@@ -136,7 +167,7 @@
           </section>
 
           <section class="section">
-            <h2>5. 월간 주요 업무 계획</h2>
+            <h2>6. 월간 주요 업무 계획</h2>
             <div class="table-container">
               <table id="monthlyPlanTable" class="plan-table">
                 <thead>
@@ -161,7 +192,7 @@
           <div id="receipt-tab" class="tab-content">
             <div class="document">
               <header class="document-header">
-                <h1>월간 영수증 정리</h1>
+                <h1>월간 지출·영수증 관리</h1>
                 <div class="header-info">
                   <div class="info-row">
                     <label for="receiptDate" class="label">제출 날짜:</label>
@@ -169,7 +200,7 @@
                   </div>
                   <div class="info-row">
                     <label for="receiptAmount" class="label">총 금액:</label>
-                    <input type="number" id="receiptAmount" class="text-input" placeholder="0" style="width: 150px;" />
+                    <input type="number" id="receiptAmount" class="text-input" placeholder="0" style="width: 150px;" readonly />
                     <span style="margin-left: 5px;">원</span>
                   </div>
                 </div>
@@ -177,16 +208,19 @@
 
               <section class="section">
                 <h2>영수증 정보</h2>
+                <p class="section-hint">선택한 날짜의 월을 기준으로 업무보고서 지출이 자동으로 모입니다. 증빙 사진을 첨부한 뒤 저장하세요.</p>
                 <section class="section">
                   <div class="table-container">
                     <table id="bill_log_table" class="bill-log-table">
                       <thead>
                         <tr>
                           <th class="date-col">날짜</th>
-                          <th class="item-col">품목</th>
-                          <th class="quantity-col">수량</th>
+                          <th class="receipt-category-col">항목</th>
+                          <th class="receipt-description-col">사용처 / 내용</th>
                           <th class="price-col">금액</th>
                           <th class="note-col">비고</th>
+                          <th class="pdf-include-col">PDF 포함</th>
+                          <th class="receipt-image-col">증빙</th>
                         </tr>
                       </thead>
                       <tbody id="bill_log_tableBody"></tbody>
@@ -229,16 +263,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('sw.js').then((registration) => {
-            console.log('Service Worker registered with scope:', registration.scope);
-          }).catch((error) => {
-            console.log('Service Worker registration failed:', error);
-          });
-        });
-      }
-    </script>
   </body>
 </html>

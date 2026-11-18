@@ -110,6 +110,9 @@
   .btn-success:hover { background-color: var(--success-hover-color); }
   .btn-info { background-color: var(--info-color); color: var(--white-color); border-color: var(--info-color); }
   .btn-info:hover { background-color: var(--info-hover-color); }
+  .autosave-status { align-self: center; min-width: 90px; color: var(--secondary-color); font-size: 12px; }
+  .autosave-status.error { color: var(--danger-color); font-weight: 600; }
+  .app-version { align-self: center; color: #8a929a; font-size: 11px; }
   
   /* =================================
      문서 내부 스타일
@@ -123,19 +126,27 @@
   .date-input:focus, .text-input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); }
   .section { margin-bottom: 30px; }
   .section h2 { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: var(--text-color); border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+  .section-hint { margin: -5px 0 14px; color: var(--secondary-color); font-size: 12px; }
   .text-area { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 100px; }
   .text-area:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25); }
   
   /* =================================
      테이블 스타일
      ================================= */
-  .table-container { margin-bottom: 20px; }
-  .work-table, .plan-table { width: 100%; border-collapse: collapse; border: 1px solid #333; margin-bottom: 10px; }
-  .work-table th, .work-table td, .plan-table th, .plan-table td { border: 1px solid #333; padding: 8px; text-align: left; vertical-align: top; }
-  .work-table th, .plan-table th { background-color: var(--light-bg-color); font-weight: bold; text-align: center; }
+  .table-container { margin-bottom: 20px; overflow-x: auto; }
+  .work-table, .plan-table, .expense-table { width: 100%; border-collapse: collapse; border: 1px solid #333; margin-bottom: 10px; }
+  .work-table th, .work-table td, .plan-table th, .plan-table td, .expense-table th, .expense-table td { border: 1px solid #333; padding: 8px; text-align: left; vertical-align: top; }
+  .work-table th, .plan-table th, .expense-table th { background-color: var(--light-bg-color); font-weight: bold; text-align: center; }
   .time-col { width: 15%; text-align: center; }
   .work-col { width: 55%; }
   .note-col { width: 30%; }
+  .expense-category-col { width: 18%; }
+  .expense-description-col { width: 42%; }
+  .expense-amount-col { width: 18%; }
+  .expense-note-col { width: 22%; }
+  .expense-table .expense-amount-input { text-align: right; }
+  .expense-table tfoot th, .expense-table tfoot td { background-color: #f3f7fb; font-weight: 700; }
+  .expense-total { text-align: right !important; color: var(--primary-color); white-space: nowrap; }
   .table-input { width: 100%; border: none; padding: 5px; font-size: 14px; font-family: inherit; background: transparent; }
   .table-input:focus { outline: none; background-color: #f8f9fa; }
   .table-controls { text-align: right; margin-top: 10px; }
@@ -166,7 +177,97 @@
   .modal-content { background: var(--white-color); padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center; transform: scale(0.9); transition: transform 0.3s; }
   .modal-overlay.active .modal-content { transform: scale(1); }
   .modal-content p { margin-bottom: 25px; color: var(--secondary-color); }
+  .modal-actions { display: flex; justify-content: center; gap: 10px; }
   .modal-actions { display: flex; justify-content: center; gap: 15px; }
+
+  /* =================================
+     내보내기 미리보기
+     ================================= */
+  body.preview-open { overflow: hidden; }
+  .export-preview-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(26, 32, 39, 0.78);
+  }
+  .export-preview-modal {
+    display: flex;
+    flex-direction: column;
+    width: min(1120px, 96vw);
+    height: min(920px, 94vh);
+    overflow: hidden;
+    background: var(--white-color);
+    border-radius: 12px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+  }
+  .export-preview-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .export-preview-header h2 { margin: 0 0 4px; font-size: 19px; }
+  .export-preview-header p { margin: 0; color: var(--secondary-color); font-size: 12px; }
+  .export-preview-close {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--light-bg-color);
+    color: var(--secondary-color);
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .export-preview-close:hover { background: #e9ecef; color: var(--text-color); }
+  .export-preview-viewport {
+    flex: 1;
+    overflow: auto;
+    padding: 28px;
+    background: #dfe4e9;
+  }
+  .export-preview-page {
+    width: 900px;
+    max-width: 100%;
+    min-height: 100%;
+    margin: 0 auto;
+    background: var(--white-color);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16);
+  }
+  .export-preview-document {
+    width: 100%;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .export-preview-field {
+    min-height: 28px;
+    padding: 5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .export-preview-textarea {
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .export-preview-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--border-color);
+    background: var(--white-color);
+  }
   
   .notification { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 5px; color: var(--white-color); font-weight: 500; z-index: 1001; box-shadow: 0 2px 10px rgba(0,0,0,0.2); animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
   .notification.success { background-color: var(--success-color); }
@@ -189,6 +290,16 @@
   .label { min-width: auto; margin-bottom: 5px; }
   .toolbar { flex-direction: column; align-items: center; }
   .btn { width: 100%; max-width: 250px; }
+  .work-table, .expense-table { min-width: 720px; }
+  .bill-log-table { min-width: 900px; }
+  .plan-table { min-width: 520px; }
+  .stat-summary { flex-direction: column; }
+  .export-preview-overlay { padding: 0; }
+  .export-preview-modal { width: 100vw; height: 100vh; max-height: none; border-radius: 0; }
+  .export-preview-header { padding: 14px 16px; }
+  .export-preview-viewport { padding: 12px; }
+  .export-preview-page { width: 820px; max-width: none; }
+  .export-preview-footer .btn { width: auto; }
 }
 
 /* ✨ PDF 출력을 위한 스타일 개선 */
@@ -196,7 +307,8 @@
   body { background-color: var(--white-color); }
   
   /* 불필요한 UI 요소 숨기기 */
-  .toolbar, .saved-reports, .table-controls, .add-row-btn, .remove-row-btn { 
+  .toolbar, .saved-reports, .table-controls, .add-row-btn, .remove-row-btn,
+  .receipt-attach-btn, .receipt-remove-image-btn {
     display: none !important; 
   }
 
@@ -214,7 +326,9 @@
 /* PDF 변환 시 버튼을 확실히 숨기기 위한 클래스 */
 .pdf-export-mode .toolbar,
 .pdf-export-mode .saved-reports,
-.pdf-export-mode .table-controls {
+.pdf-export-mode .table-controls,
+.pdf-export-mode .receipt-attach-btn,
+.pdf-export-mode .receipt-remove-image-btn {
   display: none !important;
 }
 /* PDF 변환 시 textarea를 대체할 임시 div 스타일 */
@@ -314,11 +428,52 @@
 .bill-log-table { width: 100%; border-collapse: collapse; border: 1px solid #333; margin-bottom: 10px; }
 .bill-log-table th, .bill-log-table td { border: 1px solid #333; padding: 8px; text-align: left; vertical-align: top; }
 .bill-log-table th { background-color: var(--light-bg-color); font-weight: bold; text-align: center; }
-.bill-log-table .date-col { width: 14%; }
-.bill-log-table .item-col { width: 28%; }
-.bill-log-table .quantity-col { width: 10%; text-align: center; }
-.bill-log-table .price-col { width: 18%; text-align: right; }
-.bill-log-table .note-col { width: 30%; }
+.bill-log-table .date-col { width: 12%; }
+.bill-log-table .receipt-category-col { width: 14%; }
+.bill-log-table .receipt-description-col { width: 25%; }
+.bill-log-table .price-col { width: 13%; text-align: right; }
+.bill-log-table .note-col { width: 12%; }
+.bill-log-table .pdf-include-col { width: 10%; text-align: center; }
+.bill-log-table .receipt-image-col { width: 14%; }
+.pdf-include-cell { text-align: center !important; vertical-align: middle !important; }
+.pdf-include-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary-color); }
+.receipt-image-cell { min-width: 105px; text-align: center !important; vertical-align: middle !important; }
+.receipt-thumbnail {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 6px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  cursor: zoom-in;
+}
+.receipt-attach-btn, .receipt-remove-image-btn {
+  display: inline-block;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--white-color);
+  padding: 3px 7px;
+  margin: 2px;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.receipt-attach-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+.receipt-remove-image-btn:hover { border-color: var(--danger-color); color: var(--danger-color); }
+.receipt-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+}
+.receipt-preview-overlay img { max-width: 95%; max-height: 95%; object-fit: contain; }
 
 /* =================================
    월간 통계

@@ -1,8 +1,11 @@
-const CACHE_NAME = 'daily-report-v1';
+const CACHE_NAME = 'daily-report-v7';
 const ASSETS_TO_CACHE = [
   'index.html',
   'styles.css',
   'script.js',
+  'node_modules/xlsx/dist/xlsx.full.min.js',
+  'node_modules/jspdf/dist/jspdf.umd.min.js',
+  'node_modules/html2canvas/dist/html2canvas.min.js',
   'icon-192.png',
   'icon-512.png'
 ];
@@ -26,5 +29,16 @@ self.addEventListener('fetch', (event) => {
         // 캐시에 파일이 있으면 그것을 반환하고, 없으면 네트워크로 요청합니다.
         return response || fetch(event.request);
       })
+  );
+});
+
+// 새 버전 배포 시 이전 캐시를 정리합니다.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => Promise.all(
+      cacheNames
+        .filter((cacheName) => cacheName.startsWith('daily-report-') && cacheName !== CACHE_NAME)
+        .map((cacheName) => caches.delete(cacheName))
+    ))
   );
 });
